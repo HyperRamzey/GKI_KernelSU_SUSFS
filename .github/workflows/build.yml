@@ -78,7 +78,7 @@ jobs:
       - name: Download toolchain
         run: |
           AOSP_MIRROR=https://android.googlesource.com
-          BRANCH=main-kernel-build-2024
+          BRANCH=main-kernel-build-2025
           git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools
           git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg
 
@@ -294,8 +294,8 @@ jobs:
           cp ../../kernel_patches/69_hide_stuff.patch ./
           patch -p1 --forward -F 3 < 69_hide_stuff.patch
 
-      - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+      - name: Fix WiFi and Bluetooth on Samsung 5.15 GKI devices
+        if: ${{ ( inputs.kernel_version == '5.15' ) }}
         run: |
           echo "[+] Adding Samsung KDP exported symbols to abi_gki_aarch64_galaxy"
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
