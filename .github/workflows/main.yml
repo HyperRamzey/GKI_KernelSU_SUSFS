@@ -20,7 +20,7 @@ on:
         description: 'Include WILD?'
         required: true
         type: boolean
-        default: true
+        default: false
       include_ksu:
         description: 'Include KSU?'
         required: true
