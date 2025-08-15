@@ -10,7 +10,7 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 
 ---
 
-### Proceed at your own risk!
+### Proceed at your own risk! (only for qcom\samsung)
 
 ---
 
