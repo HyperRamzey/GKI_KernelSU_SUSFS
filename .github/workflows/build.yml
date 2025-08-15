@@ -9,11 +9,11 @@ on:
       android_version:
         required: true
         type: string
-        default: 'android15'  # Optimized for Fold 5
+        default: 'android15'
       kernel_version:
         required: true
         type: string
-        default: '5.15'  # Snapdragon 8 Gen 2
+        default: '5.15'
       sub_level:
         required: true
         type: string
@@ -32,7 +32,7 @@ on:
       revision:
         required: false
         type: string
-      disable_lto:  # New: From best practices for faster builds
+      disable_lto:
         required: false
         type: boolean
         default: false
@@ -47,7 +47,7 @@ jobs:
       CCACHE_HARDLINK: "true"
 
     steps:
-      - name: Maximize Build Space  # Already good; kept for space mgmt
+      - name: Maximize Build Space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
           remove-dotnet: 'true'
@@ -57,7 +57,7 @@ jobs:
           remove-docker-images: 'true'
           remove-large-packages: 'true'
           remove-swapfile: 'true'
-          remove-cached-tools: 'true'  # Enabled as safe per tests
+          remove-cached-tools: 'true' 
           verbose: 'true'
           
       - name: Set CONFIG Environment Variable
@@ -75,9 +75,7 @@ jobs:
           set -e
           mkdir -p ~/.cache/bazel
           ccache --version
-          ccache --max-size=5G  # Increased from 2G
-          ccache --set-config=compression=true
-          ccache --set-config=compression_level=-1  # Faster compression
+          ccache --max-size=5G
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
 
       - name: Cache ccache and Bazel  # New: Caching for speed
@@ -182,7 +180,7 @@ jobs:
               else exit 1; fi ;;
           esac
 
-      - name: Add KernelSU and Apply Patches  # Combined SUSFS/Hooks/Hide for fewer steps
+      - name: Add KernelSU and Apply Patches
         run: |
           set -e
           cd "$CONFIG"
@@ -228,22 +226,9 @@ jobs:
           cp ../../kernel_patches/69_hide_stuff.patch ./;
           patch -p1 --forward -F 3 < 69_hide_stuff.patch
 
-      - name: Fix WiFi and Bluetooth on Samsung 5.15 GKI devices
-        if: inputs.kernel_version == '5.15'  # Conditional for Fold 5
-        run: |
-          set -e
-          SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
-          echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
-          echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
-          echo "kdp_usecount_inc" >> $SYMBOL_LIST
-          cd $CONFIG/common
-          PATCH="../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
-          patch -p1 --no-backup-if-mismatch < $PATCH
-          cd drivers
-          cp "../../../kernel_patches/samsung/min_kdp/min_kdp.c" min_kdp.c
-          echo "obj-y += min_kdp.o" >> Makefile
+    
 
-      - name: Add Configuration Settings  # Combined KSU/SUSFS configs
+      - name: Add Configuration Settings
         run: |
           set -e
           cd "$CONFIG"
@@ -263,7 +248,6 @@ jobs:
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig 
-          # SUSFS configs (Qualcomm for Snapdragon/Fold 5)
           echo "CONFIG_QCOM_RPMH=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_SMD_RPM=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_SPM=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -340,7 +324,7 @@ jobs:
           fi
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
-      - name: Getting KernelSU Version and Change Kernel Name  # Combined for minimization
+      - name: Getting KernelSU Version and Change Kernel Name 
         run: |
           set -e
           cd "$CONFIG"
@@ -364,31 +348,24 @@ jobs:
             rm -rf ./common/android/abi_gki_protected_exports_*
             perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
-
       - name: Build
         run: |
           set -e
           cd "$CONFIG"
           LTO_FLAG="--lto=thin"
-          if ${{ inputs.disable_lto }}; then LTO_FLAG=""; fi  # New: Optional disable for speed
+          OPT_FLAGS="--copt=-O3 --copt=-march=armv9-a+crc+crypto --copt=-mtune=cortex-x3"
+          if [[ "$DISABLE_LTO" == "true" ]]; then 
+            LTO_FLAG=""
+          fi
           if [ -f "build/build.sh" ]; then
-            export MAKEFLAGS="-j$(nproc --all)"  # Parallelism
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
+          export MAKEFLAGS="-j$(nproc --all)"
+          LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
           else
-            tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG --jobs=$(nproc --all) //common:kernel_aarch64_dist || exit 1  # Added jobs
+          tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $OPT_FLAGS --jobs=$(nproc --all) //common:kernel_aarch64_dist || exit 1 
           fi
           ccache --show-stats
-
-      - name: Create Bootimgs Folder and Copy Images  # Unchanged, but added for Android15
-        if: inputs.android_version == 'android15'
-        run: |
-          set -e
-          mkdir bootimgs
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./bootimgs
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./bootimgs
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./
-          gzip -n -k -f -9 ./Image > ./Image.gz
+        env:
+          DISABLE_LTO: ${{ inputs.disable_lto }}
 
       - name: Create ZIP Files for Different Formats
         run: |
@@ -406,19 +383,26 @@ jobs:
           mv ../Image.gz ./Image.gz
           zip -r "../$ZIP_NAME" ./*
           rm ./Image.gz
-
-      - name: Android 15 boot image build script  # Simplified for Android15/Fold 5
-        if: inputs.android_version == 'android15'
+          
+      - name: Android 13/14/15 boot image build script
+        if: ${{ inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
         run: |
-          set -e
           cd bootimgs
+
+          # Create gzip of the Image file
           gzip -n -k -f -9 ./Image > ./Image.gz
+          
+          echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot.img
+          
+          echo "Building boot-gz.img"
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-gz.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
+          
+          echo "Building boot-lz4.img"
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-lz4.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
