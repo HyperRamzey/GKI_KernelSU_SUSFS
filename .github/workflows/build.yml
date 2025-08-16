@@ -395,6 +395,11 @@ jobs:
       - name: Android 13/14/15 boot image build script
         if: ${{ inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
         run: |
+          set -e
+          # Create bootimgs directory and copy Image files to it
+          mkdir -p bootimgs
+          cp Image bootimgs/
+          cp Image.lz4 bootimgs/
           cd bootimgs
           # Create gzip of the Image file
           gzip -n -k -f -9 ./Image > ./Image.gz
