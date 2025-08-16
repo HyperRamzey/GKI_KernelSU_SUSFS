@@ -323,7 +323,7 @@ jobs:
           echo "CONFIG_INTERCONNECT_QCOM_SM8550=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_BIMC_BWMON=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_OCMEM=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_OVERLAY_FS=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_OVERLAY_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_HZ=1000" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NO_HZ_FULL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=m" >> ./common/arch/arm64/configs/gki_defconfig
