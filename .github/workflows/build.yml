@@ -337,6 +337,13 @@ jobs:
           fi
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
+      - name: Extend GKI ABI Symbol List
+        run: |
+          set -e
+          cd "$CONFIG"/common
+          sed -i '/<\/abi>/i \    <symbol>zpool_register_driver<\/symbol>' android/abi_gki_aarch64.xml
+          sed -i '/<\/abi>/i \    <symbol>zpool_unregister_driver<\/symbol>' android/abi_gki_aarch64.xml
+
       - name: Getting KernelSU Version and Change Kernel Name 
         run: |
           set -e
