@@ -357,7 +357,7 @@ jobs:
           set -e
           cd "$CONFIG"
           LTO_FLAG="--lto=thin"
-          OPT_FLAGS="--copt=-O3 --copt=-march=armv9-a+crc+crypto --copt=-mtune=cortex-x3"
+          OPT_FLAGS="--copt=-O2 --copt=-march=armv9-a+crc+crypto --copt=-mtune=cortex-x3"
           if [[ "$DISABLE_LTO" == "true" ]]; then 
             LTO_FLAG=""
           fi
