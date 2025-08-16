@@ -382,6 +382,9 @@ jobs:
           # Remove any existing ABI files that might cause conflicts
           rm -f ./common/android/abi_gki_aarch64.xml || true
           rm -f ./common/android/abi_gki_protected_exports_aarch64 || true
+          # Create empty ABI file to prevent copy failures during build
+          mkdir -p ./common/android || true
+          echo '<?xml version="1.0" encoding="UTF-8"?><abi-dump/>' > ./common/android/abi_gki_aarch64.xml
 
       - name: Pre-populate Modules List
         run: |
@@ -463,6 +466,8 @@ jobs:
             export SKIP_DEFCONFIG_CHECK=1
             export ABI_DEFINITION=""
             export KMI_SYMBOL_LIST=""
+            export SKIP_CP_KERNEL_HDR=""
+            export SKIP_ABI_CHECK=1
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
           else
             tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $OPT_FLAGS --jobs=$(nproc --all) //common:kernel_aarch64_dist || exit 1 
