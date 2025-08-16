@@ -148,7 +148,7 @@ jobs:
         id: cache-kernel-source
         with:
           path: ${{ env.CONFIG }}
-          key: kernel-source-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.os_patch_level }}
+          key: kernel-source-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-${{ inputs.kernelsu_variant }}-v2
 
       - name: Initialize and Sync Kernel Source
         if: steps.cache-kernel-source.outputs.cache-hit != 'true'  # Skip if cached
@@ -184,6 +184,15 @@ jobs:
         run: |
           set -e
           cd "$CONFIG"
+          # Clean any previous patches/modifications
+          if [ -d "common" ]; then
+            cd common
+            git checkout . || true
+            git clean -fd || true
+            cd ..
+          fi
+          # Remove any existing KernelSU directories
+          rm -rf ./KernelSU ./KernelSU-Next ./Wild_KSU ./KernelS || true
           # Add KSU (unchanged)
           case "${{ inputs.kernelsu_variant }}" in
             "WILD") curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash ${{ env.BRANCH }} ;;
