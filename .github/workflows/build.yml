@@ -280,8 +280,8 @@ jobs:
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
-          echo "CONFIG_TMPFS_XATTR=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TMPFS_POSIX_ACL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_WCD938X=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_WCD938X_SDW=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_WCD939X=m" >> ./common/arch/arm64/configs/gki_defconfig
@@ -293,12 +293,12 @@ jobs:
           echo "CONFIG_SND_USB_AUDIO=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_USB_AUDIO_MIDI_V2=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_PCM_TIMER=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_NF_TARGET_TTL=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_TARGET_HL=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_MATCH_HL=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_CONG_ADVANCED=m" >> ./common/arch/arm64/configs/gki_defconfig 
-          echo "CONFIG_TCP_CONG_BBR=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NET_SCH_FQ=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_NF_TARGET_TTL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP6_NF_TARGET_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP6_NF_MATCH_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig 
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig 
@@ -326,10 +326,10 @@ jobs:
           echo "CONFIG_OVERLAY_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_HZ=1000" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NO_HZ_FULL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_INTERACTIVE=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=m" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_FAIR_GROUP_SCHED=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_INTERACTIVE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_FAIR_GROUP_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_QCOM_COMMON=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_QDSP6V2=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_SM8550=m" >> ./common/arch/arm64/configs/gki_defconfig
