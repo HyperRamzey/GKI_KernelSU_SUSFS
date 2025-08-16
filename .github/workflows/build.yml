@@ -36,6 +36,10 @@ on:
         required: false
         type: boolean
         default: false
+      no_cache_mode:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-gki:
@@ -66,6 +70,13 @@ jobs:
           CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
           echo "CONFIG=$CONFIG" >> $GITHUB_ENV
           echo "CONFIG set to: $CONFIG"
+          
+          # Display cache mode status
+          if [ "${{ inputs.no_cache_mode }}" = "true" ]; then
+            echo "🗑️ NO CACHE MODE ENABLED - All caches will be cleared!"
+          else
+            echo "📦 Cache mode enabled - Using cached artifacts when available"
+          fi
 
       - name: Install ccache
         run: sudo apt update && sudo apt install -y ccache
@@ -78,7 +89,16 @@ jobs:
           ccache --max-size=5G
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
 
+      - name: Clear caches if no-cache mode enabled
+        if: ${{ inputs.no_cache_mode == true }}
+        run: |
+          echo "🗑️ No cache mode enabled - clearing all caches"
+          rm -rf ~/.ccache ~/.cache/bazel || true
+          ccache --clear || true
+          echo "Caches cleared successfully"
+
       - name: Cache ccache and Bazel  # New: Caching for speed
+        if: ${{ inputs.no_cache_mode != true }}
         uses: actions/cache@v4
         with:
           path: |
@@ -95,7 +115,15 @@ jobs:
           git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools
           git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg
 
+      - name: Clear dependency caches if no-cache mode enabled
+        if: ${{ inputs.no_cache_mode == true }}
+        run: |
+          echo "🗑️ No cache mode enabled - removing cached dependencies"
+          rm -rf kernel-build-tools mkbootimg AnyKernel3 susfs4ksu kernel_patches || true
+          echo "Dependency caches cleared successfully"
+
       - name: Cache Dependencies  # New: Cache clones to avoid re-fetch
+        if: ${{ inputs.no_cache_mode != true }}
         uses: actions/cache@v4
         with:
           path: |
@@ -143,7 +171,15 @@ jobs:
           if [ ! -d "susfs4ksu" ]; then git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"; fi
           if [ ! -d "kernel_patches" ]; then git clone https://github.com/WildPlusKernel/kernel_patches.git; fi
 
+      - name: Clear kernel source cache if no-cache mode enabled
+        if: ${{ inputs.no_cache_mode == true }}
+        run: |
+          echo "🗑️ No cache mode enabled - removing cached kernel source"
+          rm -rf "$CONFIG" || true
+          echo "Kernel source cache cleared successfully"
+
       - name: Cache Kernel Source  # New: Cache source to skip sync
+        if: ${{ inputs.no_cache_mode != true }}
         uses: actions/cache@v4
         id: cache-kernel-source
         with:
@@ -151,7 +187,7 @@ jobs:
           key: kernel-source-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-${{ inputs.kernelsu_variant }}-v2
 
       - name: Initialize and Sync Kernel Source
-        if: steps.cache-kernel-source.outputs.cache-hit != 'true'  # Skip if cached
+        if: ${{ inputs.no_cache_mode == true || steps.cache-kernel-source.outputs.cache-hit != 'true' }}  # Always run if no-cache, or skip if cached
         run: |
           set -e
           mkdir -p "$CONFIG"
@@ -244,77 +280,77 @@ jobs:
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
-          echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_WCD938X=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_WCD938X_SDW=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_WCD939X=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_WSA883X=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_WSA884X=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_LPASS_RX_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_LPASS_TX_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_LPASS_VA_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_USB_AUDIO=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_USB_AUDIO_MIDI_V2=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_PCM_TIMER=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_NF_TARGET_TTL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_TARGET_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_MATCH_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig 
-          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TMPFS_XATTR=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TMPFS_POSIX_ACL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD938X=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD938X_SDW=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD939X=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WSA883X=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WSA884X=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_RX_MACRO=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_TX_MACRO=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_VA_MACRO=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_USB_AUDIO=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_USB_AUDIO_MIDI_V2=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_PCM_TIMER=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_NF_TARGET_TTL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP6_NF_TARGET_HL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP6_NF_MATCH_HL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_ADVANCED=m" >> ./common/arch/arm64/configs/gki_defconfig 
+          echo "CONFIG_TCP_CONG_BBR=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_SCH_FQ=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig 
-          echo "CONFIG_QCOM_RPMH=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_SMD_RPM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_SPM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_TSENS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_CPR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_LLCC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_BUS_SCALING=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_COMMAND_DB=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_GENI_SE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_GPI_DMA=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_ARM_QCOM_CPUFREQ_HW=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_KRYO_L2_ACCESSORS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SM_GCC_8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SM_DISPCC_8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SM_VIDEOCC_8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SM_GPUCC_8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SM_MDSS_8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_INTERCONNECT_QCOM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_INTERCONNECT_QCOM_SM8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_BIMC_BWMON=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_OCMEM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_OVERLAY_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_RPMH=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_SMD_RPM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_SPM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_TSENS=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_CPR=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_LLCC=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_BUS_SCALING=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_COMMAND_DB=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_GENI_SE=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_GPI_DMA=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_ARM_QCOM_CPUFREQ_HW=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_KRYO_L2_ACCESSORS=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SM_GCC_8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SM_DISPCC_8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SM_VIDEOCC_8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SM_GPUCC_8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SM_MDSS_8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_INTERCONNECT_QCOM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_INTERCONNECT_QCOM_SM8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_BIMC_BWMON=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_OCMEM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_OVERLAY_FS=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_HZ=1000" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NO_HZ_FULL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_INTERACTIVE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_FAIR_GROUP_SCHED=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_QCOM_COMMON=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_QDSP6V2=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SND_SOC_SM8550=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DRM_MSM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DRM_PANEL_SAMSUNG_S6E3HC3=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DRM_PANEL_SAMSUNG_S6E3HC4=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DRM_PANEL_SAMSUNG_SOFEF03=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DRM_PANEL_VISIONOX_VTDR6130=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_PIL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_PIL_SMP2P=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_PIL_SMSM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_SUBSYSTEM_RESTART=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_QMI_INTERFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_MINIDUMP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MSM_DCC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_IPA=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_SMEM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_SMP2P=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_SMSM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_GLINK_SMEM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_QCOM_GLINK_SSR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_INTERACTIVE=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_FAIR_GROUP_SCHED=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_QCOM_COMMON=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_QDSP6V2=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_SM8550=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_MSM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_PANEL_SAMSUNG_S6E3HC3=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_PANEL_SAMSUNG_S6E3HC4=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_PANEL_SAMSUNG_SOFEF03=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_DRM_PANEL_VISIONOX_VTDR6130=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_PIL=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_PIL_SMP2P=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_PIL_SMSM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_SUBSYSTEM_RESTART=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_QMI_INTERFACE=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_MINIDUMP=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MSM_DCC=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_IPA=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_SMEM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_SMP2P=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_SMSM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_GLINK_SMEM=m" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_QCOM_GLINK_SSR=m" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig

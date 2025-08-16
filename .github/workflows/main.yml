@@ -33,6 +33,11 @@ on:
         required: false
         type: string
         default: ""
+      no_cache_mode:
+        description: "Enable no-cache mode (clears all caches before build)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   notify:
@@ -74,6 +79,7 @@ jobs:
       kernelsu_variant: ${{ matrix.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
+      no_cache_mode: ${{ inputs.no_cache_mode }}
 
   release:
     if: ${{ inputs.release_type == 'Release' || inputs.release_type == 'Pre-Release' }}
@@ -83,7 +89,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_NAME: "GKI Kernels With WildKSU & SUSFS v1.5.9"
-      RELEASE_BODY:
+      RELEASE_BODY: ""
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
