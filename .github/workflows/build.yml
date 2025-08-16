@@ -237,8 +237,20 @@ jobs:
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
+          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD938X=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD938X_SDW=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WCD939X=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WSA883X=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_WSA884X=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_RX_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_TX_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_SOC_LPASS_VA_MACRO=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_USB_AUDIO=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_USB_AUDIO_MIDI_V2=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_SND_PCM_TIMER=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_IP_NF_TARGET_TTL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_IP6_NF_TARGET_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_IP6_NF_MATCH_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
