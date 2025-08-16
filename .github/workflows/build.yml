@@ -237,7 +237,6 @@ jobs:
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
-          echo "CONFIG_ZPOOL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_SND_SOC_WCD938X=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -281,12 +280,6 @@ jobs:
           echo "CONFIG_INTERCONNECT_QCOM_SM8550=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_BIMC_BWMON=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_QCOM_OCMEM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_ZRAM=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_ZRAM_DEF_COMP_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_ZRAM_MEMORY_TRACKING=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_ZSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_FRONTSWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SWAP=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_OVERLAY_FS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_HZ=1000" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NO_HZ_FULL=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -336,13 +329,6 @@ jobs:
             echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> ./common/arch/arm64/configs/gki_defconfig
           fi
           sed -i 's/check_defconfig//' ./common/build.config.gki
-
-      - name: Extend GKI ABI Symbol List
-        run: |
-          set -e
-          cd "$CONFIG"/common
-          sed -i '/<\/abi>/i \    <symbol>zpool_register_driver<\/symbol>' android/abi_gki_aarch64.xml
-          sed -i '/<\/abi>/i \    <symbol>zpool_unregister_driver<\/symbol>' android/abi_gki_aarch64.xml
 
       - name: Getting KernelSU Version and Change Kernel Name 
         run: |
