@@ -372,6 +372,43 @@ jobs:
           fi
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
+      - name: Pre-populate Modules List
+        run: |
+          set -e
+          cd "$CONFIG"
+          echo "📦 Pre-populating modules list with expected modules..."
+          
+          # Clear existing modules list and add expected modules
+          rm -f ./common/android/gki_aarch64_modules
+          echo "mm/zsmalloc.ko" > ./common/android/gki_aarch64_modules
+          echo "drivers/dma/qcom/gpi.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/qcom-geni-se.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/cmd-db.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/cpr.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/mdt_loader.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/ocmem.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/qcom_rpmh.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/smd-rpm.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/smem.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/smp2p.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/smsm.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/soc/qcom/llcc-qcom.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/tty/serial/qcom_geni_serial.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/gpu/drm/scheduler/gpu-sched.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/gpu/drm/msm/msm.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/block/zram/zram.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/cpufreq/qcom-cpufreq-hw.ko" >> ./common/android/gki_aarch64_modules
+          echo "drivers/firmware/qcom-scm.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/core/snd-hwdep.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/usb/snd-usb-audio.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/usb/snd-usbmidi-lib.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/soc/codecs/snd-soc-hdmi-codec.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/soc/codecs/snd-soc-lpass-va-macro.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/soc/codecs/snd-soc-lpass-rx-macro.ko" >> ./common/android/gki_aarch64_modules
+          echo "sound/soc/codecs/snd-soc-lpass-tx-macro.ko" >> ./common/android/gki_aarch64_modules
+          
+          echo "✅ Updated modules list with $(wc -l < ./common/android/gki_aarch64_modules) modules"
+
       - name: Getting KernelSU Version and Change Kernel Name 
         run: |
           set -e
