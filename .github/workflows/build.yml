@@ -226,8 +226,6 @@ jobs:
           cp ../../kernel_patches/69_hide_stuff.patch ./;
           patch -p1 --forward -F 3 < 69_hide_stuff.patch
 
-    
-
       - name: Add Configuration Settings
         run: |
           set -e
@@ -322,7 +320,6 @@ jobs:
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
-
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
           else
@@ -354,6 +351,7 @@ jobs:
             rm -rf ./common/android/abi_gki_protected_exports_*
             perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
+
       - name: Build
         run: |
           set -e
@@ -364,10 +362,10 @@ jobs:
             LTO_FLAG=""
           fi
           if [ -f "build/build.sh" ]; then
-          export MAKEFLAGS="-j$(nproc --all)"
-          LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
+            export MAKEFLAGS="-j$(nproc --all)"
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
           else
-          tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $OPT_FLAGS --jobs=$(nproc --all) //common:kernel_aarch64_dist || exit 1 
+            tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $OPT_FLAGS --jobs=$(nproc --all) //common:kernel_aarch64_dist || exit 1 
           fi
           ccache --show-stats
         env:
@@ -376,6 +374,10 @@ jobs:
       - name: Create ZIP Files for Different Formats
         run: |
           set -e
+          # Copy images from dist to root
+          cp "$CONFIG/out/android13-5.15/dist/Image" .
+          cp "$CONFIG/out/android13-5.15/dist/Image.lz4" .
+          cp "$CONFIG/out/android13-5.15/dist/Image.gz" .
           cd ./AnyKernel3
           ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           mv ../Image ./Image
@@ -394,20 +396,16 @@ jobs:
         if: ${{ inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
         run: |
           cd bootimgs
-
           # Create gzip of the Image file
           gzip -n -k -f -9 ./Image > ./Image.gz
-          
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot.img
-          
           echo "Building boot-gz.img"
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-gz.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
-          
           echo "Building boot-lz4.img"
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
