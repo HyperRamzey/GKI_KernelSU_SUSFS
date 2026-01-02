@@ -707,7 +707,12 @@ jobs:
         git config --global user.email "bins4us@hotmail.com"
         git add .
         git commit -m "Wild: Clean Dirty Flag"
-
+        
+    - name: Apply O3 Optimization
+      working-directory: ${{ env.KERNEL_ROOT }}/common
+      run: |
+        sed -i 's/-O2/-O3/g' Makefile
+        
     - name: Build Kernel
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
